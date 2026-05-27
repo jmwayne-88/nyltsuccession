@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Would You Rather?</title>
+  <style>
+    :root {
+      --bg: #0d0d1a;
+      --card-bg: #1a1a2e;
+      --accent-a: #ff3e6c;
+      --accent-b: #00d4ff;
+      --accent-mix: #a855f7;
+      --text: #f0f0f0;
+      --muted: #888;
+      --or-bg: #ffffff;
+      --glow-a: rgba(255, 62, 108, 0.4);
+      --glow-b: rgba(0, 212, 255, 0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 48px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    header h1 {
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      font-weight: 900;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 1rem;
+      margin-top: 6px;
+    }
+
+    /* ── Theme Selector ── */
+    .theme-selector {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .theme-btn {
+      border: 2px solid transparent;
+      border-radius: 50px;
+      padding: 10px 22px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: var(--card-bg);
+      color: var(--text);
+      letter-spacing: 0.3px;
+    }
+
+    .theme-btn[data-theme="funny"] {
+      border-color: #fbbf24;
+      color: #fbbf24;
+    }
+    .theme-btn[data-theme="funny"].active,
+    .theme-btn[data-theme="funny"]:hover {
+      background: #fbbf24;
+      color: #0d0d1a;
+      box-shadow: 0 0 18px rgba(251, 191, 36, 0.5);
+    }
+
+    .theme-btn[data-theme="thought"] {
+      border-color: var(--accent-b);
+      color: var(--accent-b);
+    }
+    .theme-btn[data-theme="thought"].active,
+    .theme-btn[data-theme="thought"]:hover {
+      background: var(--accent-b);
+      color: #0d0d1a;
+      box-shadow: 0 0 18px var(--glow-b);
+    }
+
+    .theme-btn[data-theme="mix"] {
+      border-color: var(--accent-mix);
+      color: var(--accent-mix);
+    }
+    .theme-btn[data-theme="mix"].active,
+    .theme-btn[data-theme="mix"]:hover {
+      background: var(--accent-mix);
+      color: #fff;
+      box-shadow: 0 0 18px rgba(168, 85, 247, 0.5);
+    }
+
+    /* ── Generate Button ── */
+    #generateBtn {
+      display: block;
+      margin: 0 auto 36px;
+      padding: 14px 48px;
+      font-size: 1.15rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+      color: #fff;
+      text-transform: uppercase;
+      box-shadow: 0 4px 24px rgba(255,62,108,0.35), 0 2px 8px rgba(0,212,255,0.2);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s;
+    }
+
+    #generateBtn:hover { transform: scale(1.05); box-shadow: 0 6px 32px rgba(255,62,108,0.5); }
+    #generateBtn:active { transform: scale(0.98); }
+    #generateBtn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* ── Question Area ── */
+    #questionArea {
+      width: 100%;
+      max-width: 780px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      pointer-events: none;
+    }
+
+    #questionArea.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    /* ── Cards ── */
+    .cards-row {
+      display: flex;
+      gap: 0;
+      align-items: stretch;
+      position: relative;
+    }
+
+    .option-card {
+      flex: 1;
+      background: var(--card-bg);
+      border: 2px solid transparent;
+      border-radius: 20px;
+      padding: 36px 28px;
+      cursor: pointer;
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      font-weight: 700;
+      line-height: 1.45;
+      text-align: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+      position: relative;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .option-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.2s;
+      border-radius: 18px;
+    }
+
+    #cardA { border-color: var(--accent-a); }
+    #cardA::before { background: radial-gradient(circle at 50% 50%, var(--glow-a), transparent 70%); }
+    #cardA:hover::before { opacity: 1; }
+    #cardA:hover { transform: scale(1.03); box-shadow: 0 0 32px var(--glow-a); }
+
+    #cardB { border-color: var(--accent-b); }
+    #cardB::before { background: radial-gradient(circle at 50% 50%, var(--glow-b), transparent 70%); }
+    #cardB:hover::before { opacity: 1; }
+    #cardB:hover { transform: scale(1.03); box-shadow: 0 0 32px var(--glow-b); }
+
+    .option-card.chosen { transform: scale(1.05); }
+    #cardA.chosen { background: rgba(255, 62, 108, 0.15); box-shadow: 0 0 40px var(--glow-a); }
+    #cardB.chosen { background: rgba(0, 212, 255, 0.15); box-shadow: 0 0 40px var(--glow-b); }
+    .option-card.unchosen { opacity: 0.35; transform: scale(0.97); cursor: default; }
+    .option-card.locked { cursor: default; }
+
+    .card-label {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      padding: 4px 12px;
+      border-radius: 50px;
+    }
+    #cardA .card-label { background: rgba(255,62,108,0.2); color: var(--accent-a); }
+    #cardB .card-label { background: rgba(0,212,255,0.2); color: var(--accent-b); }
+
+    /* ── OR Divider ── */
+    .or-divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      flex-shrink: 0;
+      z-index: 2;
+    }
+
+    .or-circle {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 3px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    /* ── Reaction Box ── */
+    #reactionBox {
+      margin-top: 28px;
+      background: linear-gradient(135deg, rgba(255,62,108,0.08), rgba(0,212,255,0.08));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 24px 28px;
+      text-align: center;
+      font-size: 1.15rem;
+      font-style: italic;
+      line-height: 1.5;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.4s ease 0.1s, transform 0.4s ease 0.1s;
+      display: none;
+    }
+
+    #reactionBox.visible {
+      opacity: 1;
+      transform: translateY(0);
+      display: block;
+    }
+
+    #reactionBox .reaction-label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent-mix);
+      margin-bottom: 10px;
+      font-style: normal;
+    }
+
+    /* ── Next Button ── */
+    #nextBtn {
+      display: none;
+      margin: 22px auto 0;
+      padding: 12px 40px;
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      border: 2px solid var(--accent-mix);
+      border-radius: 50px;
+      background: transparent;
+      color: var(--accent-mix);
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.15s;
+      text-transform: uppercase;
+    }
+
+    #nextBtn:hover {
+      background: var(--accent-mix);
+      color: #fff;
+      box-shadow: 0 0 20px rgba(168,85,247,0.5);
+      transform: scale(1.04);
+    }
+
+    #nextBtn.show { display: block; }
+
+    /* ── Spinner ── */
+    .spinner {
+      display: none;
+      margin: 0 auto 36px;
+      width: 36px;
+      height: 36px;
+      border: 4px solid rgba(255,255,255,0.1);
+      border-top-color: var(--accent-a);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    .spinner.show { display: block; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Pulse on load ── */
+    @keyframes cardPop {
+      0%   { transform: scale(0.92); opacity: 0; }
+      60%  { transform: scale(1.04); }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+
+    .card-enter { animation: cardPop 0.35s ease forwards; }
+
+    /* ── Error ── */
+    #errorMsg {
+      display: none;
+      color: var(--accent-a);
+      text-align: center;
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+      padding: 12px 20px;
+      background: rgba(255,62,108,0.08);
+      border-radius: 12px;
+      border: 1px solid rgba(255,62,108,0.25);
+    }
+
+    #errorMsg.show { display: block; }
+
+    /* ── Responsive ── */
+    @media (max-width: 560px) {
+      .cards-row { flex-direction: column; }
+      .or-divider { width: auto; height: 48px; flex-direction: row; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Would You Rather?</h1>
+    <p>Pick your poison — there are no right answers.</p>
+  </header>
+
+  <!-- Theme Selector -->
+  <div class="theme-selector">
+    <button class="theme-btn active" data-theme="funny">😂 Funny &amp; Absurd</button>
+    <button class="theme-btn" data-theme="thought">🧠 Thought-Provoking</button>
+    <button class="theme-btn" data-theme="mix">🎲 Mix It Up</button>
+  </div>
+
+  <!-- Generate -->
+  <button id="generateBtn">✦ Generate Dilemma</button>
+  <div class="spinner" id="spinner"></div>
+  <div id="errorMsg"></div>
+
+  <!-- Question Area -->
+  <div id="questionArea">
+    <div class="cards-row">
+      <div class="option-card" id="cardA" role="button" tabindex="0" aria-label="Option A">
+        <span class="card-label">Option A</span>
+        <p id="textA"></p>
+      </div>
+      <div class="or-divider"><div class="or-circle">OR</div></div>
+      <div class="option-card" id="cardB" role="button" tabindex="0" aria-label="Option B">
+        <span class="card-label">Option B</span>
+        <p id="textB"></p>
+      </div>
+    </div>
+
+    <div id="reactionBox">
+      <span class="reaction-label">✦ Claude's Take</span>
+      <span id="reactionText"></span>
+    </div>
+
+    <button id="nextBtn">Next Question →</button>
+  </div>
+
+  <script>
+    // ──────────────────────────────────────────
+    //  CONFIG — replace with your Anthropic key
+    // ──────────────────────────────────────────
+    const API_KEY = 'YOUR_API_KEY_HERE';
+    const API_URL = 'https://api.anthropic.com/v1/messages';
+    const MODEL   = 'claude-sonnet-4-20250514';
+
+    // ── State ──────────────────────────────────
+    let selectedTheme = 'funny';
+    let currentQuestion = null;
+    let locked = false;
+
+    // ── Elements ──────────────────────────────
+    const generateBtn   = document.getElementById('generateBtn');
+    const spinner       = document.getElementById('spinner');
+    const errorMsg      = document.getElementById('errorMsg');
+    const questionArea  = document.getElementById('questionArea');
+    const cardA         = document.getElementById('cardA');
+    const cardB         = document.getElementById('cardB');
+    const textA         = document.getElementById('textA');
+    const textB         = document.getElementById('textB');
+    const reactionBox   = document.getElementById('reactionBox');
+    const reactionText  = document.getElementById('reactionText');
+    const nextBtn       = document.getElementById('nextBtn');
+
+    // ── Theme Selection ────────────────────────
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedTheme = btn.dataset.theme;
+      });
+    });
+
+    // ── Helpers ────────────────────────────────
+    function setLoading(val) {
+      generateBtn.disabled = val;
+      spinner.classList.toggle('show', val);
+      generateBtn.style.display = val ? 'none' : 'block';
+    }
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorMsg.classList.add('show');
+    }
+
+    function clearError() {
+      errorMsg.classList.remove('show');
+    }
+
+    async function callClaude(systemPrompt, userPrompt) {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': API_KEY,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: 300,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }]
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error?.message || `API error ${res.status}`);
+      }
+
+      const data = await res.json();
+      return data.content[0].text.trim();
+    }
+
+    // ── Generate Question ──────────────────────
+    async function generateQuestion() {
+      clearError();
+      setLoading(true);
+      questionArea.classList.remove('visible');
+      reactionBox.classList.remove('visible');
+      reactionBox.style.display = 'none';
+      nextBtn.classList.remove('show');
+      locked = false;
+      cardA.classList.remove('chosen', 'unchosen', 'locked');
+      cardB.classList.remove('chosen', 'unchosen', 'locked');
+
+      const themeMap = {
+        funny:   'funny, absurd, and ridiculous scenarios — think silly hypotheticals and weird situations that make people laugh',
+        thought: 'genuinely thought-provoking moral dilemmas, philosophical choices, and life-altering decisions',
+        mix:     'a creative mix of funny absurd scenarios AND serious thought-provoking dilemmas'
+      };
+
+      const systemPrompt = `You are a creative game show writer generating "Would You Rather" questions.
+Focus on ${themeMap[selectedTheme]}.
+Respond ONLY with valid JSON in exactly this format (no extra text, no markdown):
+{"option_a": "...", "option_b": "..."}
+Each option should start with a verb phrase (e.g., "have to...", "only ever...", "be able to...").
+Keep each option under 20 words. Make the choice genuinely difficult and interesting.`;
+
+      try {
+        const raw = await callClaude(systemPrompt, 'Generate a new would-you-rather question.');
+        // Strip markdown code fences if present
+        const cleaned = raw.replace(/```json?\s*/gi, '').replace(/```/g, '').trim();
+        const json = JSON.parse(cleaned);
+
+        if (!json.option_a || !json.option_b) throw new Error('Unexpected response format.');
+
+        currentQuestion = json;
+        textA.textContent = json.option_a;
+        textB.textContent = json.option_b;
+
+        // Animate cards in
+        cardA.classList.add('card-enter');
+        cardB.classList.add('card-enter');
+        setTimeout(() => { cardA.classList.remove('card-enter'); cardB.classList.remove('card-enter'); }, 400);
+
+        questionArea.classList.add('visible');
+      } catch (e) {
+        showError('Oops — ' + (e.message || 'something went wrong. Check your API key.'));
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // ── Handle Choice ──────────────────────────
+    async function handleChoice(chosen) {
+      if (locked || !currentQuestion) return;
+      locked = true;
+
+      const chosenCard   = chosen === 'A' ? cardA : cardB;
+      const unchosenCard = chosen === 'A' ? cardB : cardA;
+      const chosenText   = chosen === 'A' ? currentQuestion.option_a : currentQuestion.option_b;
+
+      chosenCard.classList.add('chosen', 'locked');
+      unchosenCard.classList.add('unchosen', 'locked');
+
+      // Fetch reaction
+      reactionBox.style.display = 'block';
+      reactionText.textContent = '...';
+      // Tiny delay so display:block renders before transition
+      requestAnimationFrame(() => requestAnimationFrame(() => reactionBox.classList.add('visible')));
+
+      const systemPrompt = `You are a witty, snarky game show host reacting to a player's "Would You Rather" choice.
+Write exactly ONE sentence — sharp, funny, and slightly judgmental but never mean-spirited.
+No quotes around the sentence. No intro like "Great choice!" — just the witty reaction.`;
+
+      try {
+        const reaction = await callClaude(
+          systemPrompt,
+          `The player chose: "${chosenText}". Give a one-sentence witty reaction.`
+        );
+        reactionText.textContent = reaction;
+      } catch {
+        reactionText.textContent = 'Interesting choice... I have questions.';
+      }
+
+      nextBtn.classList.add('show');
+    }
+
+    // ── Event Listeners ────────────────────────
+    generateBtn.addEventListener('click', generateQuestion);
+
+    cardA.addEventListener('click', () => handleChoice('A'));
+    cardB.addEventListener('click', () => handleChoice('B'));
+
+    // Keyboard support
+    cardA.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') handleChoice('A'); });
+    cardB.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') handleChoice('B'); });
+
+    nextBtn.addEventListener('click', generateQuestion);
+  </script>
+</body>
+</html>

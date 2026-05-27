@@ -27,7 +27,12 @@ jobs:
       - name: Inject API key
         env:
           WYRAPI: ${{ secrets.WYRAPI }}
-        run: sed -i "s|__WYRAPI__|${WYRAPI}|g" index.html
+        run: |
+          if [ -z "${WYRAPI}" ]; then
+            echo "ERROR: WYRAPI secret is not set. Add it under Settings → Secrets and variables → Actions (repository secret) or Settings → Environments → github-pages → Add secret."
+            exit 1
+          fi
+          sed -i "s|__WYRAPI__|${WYRAPI}|g" index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

@@ -419,6 +419,10 @@
     });
 
     // ── Helpers ────────────────────────────────
+    function keyReady() {
+      return API_KEY && API_KEY !== '__WYRAPI__' && API_KEY.length > 10;
+    }
+
     function setLoading(val) {
       generateBtn.disabled = val;
       spinner.classList.toggle('show', val);
@@ -463,6 +467,12 @@
     // ── Generate Question ──────────────────────
     async function generateQuestion() {
       clearError();
+
+      if (!keyReady()) {
+        showError('API key not configured. If running locally, replace __WYRAPI__ in index.html with your Anthropic key. If using GitHub Pages, make sure the WYRAPI secret is set and the Actions workflow has run successfully.');
+        return;
+      }
+
       setLoading(true);
       questionArea.classList.remove('visible');
       reactionBox.classList.remove('visible');
